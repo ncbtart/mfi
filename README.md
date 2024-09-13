@@ -19,7 +19,7 @@ City Weather Search est une application React permettant aux utilisateurs de rec
 1. Clonez le dépôt GitHub sur votre machine locale :
 
 ```bash
-   git clone https://github.com/votre-utilisateur/city-weather-search.git
+   git clone https://github.com/ncbtart/mfi.git
 ```
 
 2. Accédez au répertoire du projet :
