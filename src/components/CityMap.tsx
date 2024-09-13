@@ -98,6 +98,15 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
       // Ajoute la couche vectorielle à la carte
       mapRef.current.addLayer(vectorLayerRef.current);
 
+      // Ajouter un gestionnaire pour changer le curseur sur les marqueurs
+      mapRef.current.on("pointermove", function (event) {
+        if (!mapRef.current || !mapElement.current) return;
+        const pixel = mapRef.current.getEventPixel(event.originalEvent);
+        const hit = mapRef.current.hasFeatureAtPixel(pixel);
+
+        mapElement.current.style.cursor = hit ? "pointer" : ""; // Change le curseur en "pointer" ou par défaut
+      });
+
       // Initialisation de l'interaction Select
       selectInteractionRef.current = new Select({
         condition: click,
