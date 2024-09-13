@@ -18,16 +18,15 @@ City Weather Search est une application React permettant aux utilisateurs de rec
 
 1. Clonez le dépôt GitHub sur votre machine locale :
 
-   ```bash
+```bash
    git clone https://github.com/votre-utilisateur/city-weather-search.git
-   ```
+```
 
-````
 2. Accédez au répertoire du projet :
 
 ```bash
 cd city-weather-search
-````
+```
 
 3. Créez un fichier .env à la racine du projet et ajoutez votre clé API OpenWeatherMap comme ceci :
 
