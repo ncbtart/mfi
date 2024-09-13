@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "ol/ol.css";
-import { Map, View } from "ol";
+import { Map, Overlay, View } from "ol";
 import TileLayer from "ol/layer/Tile";
 import XYZ from "ol/source/XYZ";
 import { fromLonLat } from "ol/proj";
@@ -11,6 +11,7 @@ import VectorLayer from "ol/layer/Vector";
 import { Icon, Style, Text, Fill, Stroke } from "ol/style";
 import Select from "ol/interaction/Select";
 import { click } from "ol/events/condition";
+import GeoJSON from "ol/format/GeoJSON";
 
 import { useWeather } from "../hooks/weatherContext";
 import { cities } from "../services/cityService";
@@ -35,19 +36,56 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
   // Initialisation de la carte et interaction Select (une seule fois)
   useEffect(() => {
     if (!mapRef.current && mapElement.current) {
+      // Fonction pour styliser uniquement la France
+      const franceStyle = new Style({
+        fill: new Fill({
+          color: "rgb(80, 200, 120, 1)", // Couleur de remplissage bleu transparent pour la France
+        }),
+        stroke: new Stroke({
+          color: "#228B22", // Couleur des frontières de la France (bleu)
+          width: 2,
+        }),
+      });
+
+      // Style neutre pour les autres pays
+      const neutralStyle = new Style({
+        fill: new Fill({
+          color: "rgba(200, 200, 200, 1)", // Couleur de remplissage gris pour les autres pays
+        }),
+        stroke: new Stroke({
+          color: "#888888", // Contours gris pour les autres pays
+          width: 1,
+        }),
+      });
+
       // Création de la carte
       mapRef.current = new Map({
         target: mapElement.current,
         layers: [
           new TileLayer({
             source: new XYZ({
-              url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", // URL pour les tuiles satellite Esri
+              url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}", // Carte de terrain Esri sans rues
             }),
+          }),
+          new VectorLayer({
+            source: new VectorSource({
+              url: "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson", // GeoJSON des frontières des pays
+              format: new GeoJSON(),
+              // Filtrer pour ne garder que la France
+            }),
+            style: function (feature) {
+              // Appliquer le style uniquement si le pays est la France
+              return feature.get("ADMIN") === "France"
+                ? franceStyle
+                : neutralStyle; // Utiliser undefined au lieu de null
+            },
           }),
         ],
         view: new View({
           center: fromLonLat([2.2137, 46.9]), // Centre de la France
           zoom: 6,
+          minZoom: 6, // Limiter le zoom maximum
+          extent: fromLonLat([-10, 35]).concat(fromLonLat([15, 55])),
         }),
       });
 
@@ -107,7 +145,7 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
               image: new Icon({
                 anchor: [0.5, 0.5],
                 src: iconUrl, // Utilise l'icône météo
-                scale: isSelected ? 1.1 : 0.8, // Échelle plus grande si la ville est sélectionnée
+                scale: isSelected ? 1 : 0.8, // Échelle plus grande si la ville est sélectionnée
               }),
               text: new Text({
                 offsetX: 10.5,
