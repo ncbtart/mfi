@@ -1,18 +1,17 @@
+import { getCityCoordinates } from "./cityService";
+
 const API_KEY = process.env.REACT_APP_OPENWEATHERMAP_API_KEY;
-const citiesCoordinates: { [key: string]: { lat: number; lon: number } } = {
-  Toulouse: { lat: 43.6045, lon: 1.444 },
-  Paris: { lat: 48.8566, lon: 2.3522 },
-  Brest: { lat: 48.3904, lon: -4.4861 },
-};
 
 // Fonction pour récupérer les prévisions météo d'une ville spécifique
 export const fetchWeatherDataForCity = async (cityName: string) => {
-  const city = citiesCoordinates[cityName];
+  const city = getCityCoordinates(cityName);
+
   if (!city) {
     throw new Error("City not found");
   }
 
   const { lat, lon } = city;
+
   const response = await fetch(
     `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely&units=metric&appid=${API_KEY}`
   );
