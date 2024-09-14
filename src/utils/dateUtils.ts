@@ -9,9 +9,8 @@ export function formatDateToFrenchLocale(dateString: string): string {
   const options: Intl.DateTimeFormatOptions = {
     weekday: "long", // 'long', 'short' ou 'narrow'
     day: "numeric", // 'numeric' ou '2-digit'
-    month: "long", // 'long', 'short' ou 'narrow'
   };
 
   // Retourne la date formatée en français
-  return date.toLocaleDateString("fr-FR", options);
+  return date.toLocaleDateString("en-Us", options);
 }

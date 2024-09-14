@@ -26,6 +26,8 @@ export const fetchWeatherDataForCity = async (cityName: string) => {
   const threeDaysForecast = weatherData.daily.slice(0, 3).map((day: any) => ({
     date: new Date(day.dt * 1000).toLocaleDateString(),
     temp: day.temp.day,
+    wind_speed: day.wind_speed,
+    humidity: day.humidity,
     weather: {
       description: day.weather[0].description,
       icon: day.weather[0].icon,

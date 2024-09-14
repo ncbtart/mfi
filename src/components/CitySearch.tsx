@@ -45,14 +45,14 @@ const CitySearch: React.FC<CitySearchProps> = ({ onCitySelect }) => {
     <div className="relative">
       <label htmlFor="search" className="sr-only">
         {" "}
-        Rechercher{" "}
+        Look up{" "}
       </label>
 
       <input
         id="search"
         type="text"
         className="rounded-md border border-gray-300 py-2 px-4 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        placeholder="Rechercher une ville"
+        placeholder="Look up a city..."
         value={searchQuery}
         onChange={handleSearchChange}
         onFocus={() => setDropdownVisible(true)} // Affiche la liste lorsque l'input est focalisé
@@ -98,7 +98,7 @@ const CitySearch: React.FC<CitySearchProps> = ({ onCitySelect }) => {
         filteredCities.length === 0 &&
         searchQuery.length > 0 && (
           <p className="absolute z-10 w-64 bg-white border border-gray-200 rounded-md shadow-md mt-1 p-4 text-center text-gray-500">
-            Aucune ville trouvée
+            No results found
           </p>
         )}
     </div>

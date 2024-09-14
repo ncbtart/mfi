@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "ol/ol.css";
-import { Map, Overlay, View } from "ol";
+import { Map, View } from "ol";
 import TileLayer from "ol/layer/Tile";
 import XYZ from "ol/source/XYZ";
 import { fromLonLat } from "ol/proj";
@@ -12,6 +12,7 @@ import { Icon, Style, Text, Fill, Stroke } from "ol/style";
 import Select from "ol/interaction/Select";
 import { click } from "ol/events/condition";
 import GeoJSON from "ol/format/GeoJSON";
+import { WeatherData } from "../hooks/weatherContext";
 
 import { useWeather } from "../hooks/weatherContext";
 import { cities } from "../services/cityService";
@@ -24,6 +25,27 @@ interface CityMapProps {
   selectedCity: string | null; // Ville sélectionnée
 }
 
+const franceStyle = new Style({
+  fill: new Fill({
+    color: "RGB(137, 199, 99, 1)", // Couleur de remplissage bleu transparent pour la France
+  }),
+  stroke: new Stroke({
+    color: "#228B22", // Couleur des frontières de la France (bleu)
+    width: 2,
+  }),
+});
+
+// Style neutre pour les autres pays
+const neutralStyle = new Style({
+  fill: new Fill({
+    color: "rgba(200, 200, 200, 1)", // Couleur de remplissage gris pour les autres pays
+  }),
+  stroke: new Stroke({
+    color: "#888888", // Contours gris pour les autres pays
+    width: 1,
+  }),
+});
+
 const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
   const mapElement = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
@@ -33,33 +55,18 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
   const { weatherData, loading } = useWeather(); // Récupération des données météo depuis le contexte
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null); // Stocke la ville sélectionnée
 
+  const [tooltip, setTooltip] = useState<WeatherData | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 }); // Stocker la position du tooltip
   // Initialisation de la carte et interaction Select (une seule fois)
   useEffect(() => {
     if (!mapRef.current && mapElement.current) {
-      // Fonction pour styliser uniquement la France
-      const franceStyle = new Style({
-        fill: new Fill({
-          color: "rgb(80, 200, 120, 1)", // Couleur de remplissage bleu transparent pour la France
-        }),
-        stroke: new Stroke({
-          color: "#228B22", // Couleur des frontières de la France (bleu)
-          width: 2,
-        }),
-      });
-
-      // Style neutre pour les autres pays
-      const neutralStyle = new Style({
-        fill: new Fill({
-          color: "rgba(200, 200, 200, 1)", // Couleur de remplissage gris pour les autres pays
-        }),
-        stroke: new Stroke({
-          color: "#888888", // Contours gris pour les autres pays
-          width: 1,
-        }),
+      const vectorSource = new VectorSource({
+        url: "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson",
+        format: new GeoJSON(),
       });
 
       // Création de la carte
-      mapRef.current = new Map({
+      const map = new Map({
         target: mapElement.current,
         layers: [
           new TileLayer({
@@ -68,11 +75,7 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
             }),
           }),
           new VectorLayer({
-            source: new VectorSource({
-              url: "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson", // GeoJSON des frontières des pays
-              format: new GeoJSON(),
-              // Filtrer pour ne garder que la France
-            }),
+            source: vectorSource,
             style: function (feature) {
               // Appliquer le style uniquement si le pays est la France
               return feature.get("ADMIN") === "France"
@@ -90,31 +93,21 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
       });
 
       // Initialisation de la couche vectorielle pour les marqueurs de ville
-      const vectorSource = new VectorSource();
       vectorLayerRef.current = new VectorLayer({
-        source: vectorSource,
+        source: new VectorSource(),
       });
 
       // Ajoute la couche vectorielle à la carte
-      mapRef.current.addLayer(vectorLayerRef.current);
-
-      // Ajouter un gestionnaire pour changer le curseur sur les marqueurs
-      mapRef.current.on("pointermove", function (event) {
-        if (!mapRef.current || !mapElement.current) return;
-        const pixel = mapRef.current.getEventPixel(event.originalEvent);
-        const hit = mapRef.current.hasFeatureAtPixel(pixel);
-
-        mapElement.current.style.cursor = hit ? "pointer" : ""; // Change le curseur en "pointer" ou par défaut
-      });
+      map.addLayer(vectorLayerRef.current);
 
       // Initialisation de l'interaction Select
-      selectInteractionRef.current = new Select({
+      const selectInteraction = new Select({
         condition: click,
         layers: [vectorLayerRef.current], // Appliquer l'interaction à la couche vectorielle
       });
 
       // Gestion du clic sur une ville
-      selectInteractionRef.current.on("select", (e) => {
+      selectInteraction.on("select", (e) => {
         const selected = e.selected[0] as Feature;
         if (selected) {
           const cityName = selected.get("name");
@@ -123,7 +116,10 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
         }
       });
 
-      mapRef.current.addInteraction(selectInteractionRef.current);
+      map.addInteraction(selectInteraction);
+
+      selectInteractionRef.current = selectInteraction;
+      mapRef.current = map;
     }
   }, [onCityClick]);
 
@@ -164,10 +160,47 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
                 scale: isSelected ? 1.8 : 1.5,
                 stroke: new Stroke({ color: "#fff", width: 2 }),
               }),
+              stroke: new Stroke({
+                color: isSelected ? "#ff0000" : "#000", // Couleur de la bordure rouge si la ville est sélectionnée
+                width: isSelected ? 3 : 1, // Largeur de la bordure plus grande si la ville est sélectionnée
+              }),
             })
           );
 
           vectorSource.addFeature(feature); // Ajoute la feature à la source vectorielle
+
+          // Ajouter un gestionnaire pour changer le curseur sur les marqueurs
+
+          if (mapRef.current) {
+            const map = mapRef.current;
+
+            map.on("pointermove", function (event) {
+              if (!mapRef.current || !mapElement.current) return;
+              const pixel = mapRef.current.getEventPixel(event.originalEvent);
+              const hit = map.hasFeatureAtPixel(pixel, {
+                layerFilter: (layer) => layer === vectorLayerRef.current,
+              });
+
+              if (hit) {
+                const feature = map.forEachFeatureAtPixel(
+                  pixel,
+                  (feature) => feature
+                );
+                const cityName = feature?.get("name");
+                const weather = weatherData[cityName];
+
+                setTooltip(weather); // Mise à jour du tooltip
+                setTooltipPosition({
+                  x: event.originalEvent.clientX,
+                  y: event.originalEvent.clientY,
+                }); // Mise à jour de la position
+                mapElement.current.style.cursor = "pointer";
+              } else {
+                setTooltip(null);
+                mapElement.current.style.cursor = "";
+              }
+            });
+          }
         }
       });
     }
@@ -183,7 +216,7 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
   return (
     <div
       ref={mapElement}
-      className="relative rounded-lg shadow-lg overflow-hidden w-[800px] h-[800px] mx-auto mt-2"
+      className="relative rounded-lg shadow-lg overflow-hidden w-[1500px] h-[800px] mx-auto mt-2"
     >
       {selectedFeature && (
         <Modal
@@ -196,6 +229,48 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
             city={selectedFeature.get("name")}
           />
         </Modal>
+      )}
+
+      {tooltip && (
+        <div
+          style={{
+            position: "absolute",
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: "translate(-50%, -100%)",
+            background: "white",
+            padding: "5px 20px",
+            borderRadius: "5px",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.3)",
+            pointerEvents: "none",
+            // Pour éviter que le tooltip interfère avec le clic
+          }}
+        >
+          <div className="flex flex-col justify-center text-center">
+            <h2 className="font-bold">{tooltip.cityName}</h2>
+
+            <p>{Math.round(tooltip.temp)}°</p>
+
+            <img
+              src={`https://openweathermap.org/img/wn/${tooltip.forecast[0].weather.icon}.png`}
+              alt={tooltip.forecast[0].weather.description}
+              width="40"
+              className="mx-auto -mb-2"
+            />
+
+            <p className="capitalize text-sm">
+              {tooltip.forecast[0].weather.description}
+            </p>
+
+            <p className="text-xs">
+              Wind : {tooltip.forecast[0].wind_speed} km/h
+            </p>
+
+            <p className="text-xs">
+              Humidity : {tooltip.forecast[0].humidity}%
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -2,11 +2,23 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 import { fetchWeatherDataForCity } from "../services/weatherService";
 import { cities } from "../services/cityService";
 
-interface WeatherData {
+export interface ForecastData {
+  date: string;
+  temp: number;
+  icon: string;
+  humidity: number;
+  wind_speed: number;
+  weather: {
+    description: string;
+    icon: string;
+  };
+}
+
+export interface WeatherData {
   cityName: string;
   temp: number;
   icon: string;
-  forecast: any[];
+  forecast: ForecastData[];
 }
 
 interface WeatherContextType {

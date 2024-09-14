@@ -31,11 +31,11 @@ const Modal: React.FC<ModalProps> = ({ title, isOpen, onClose, children }) => {
       onClick={handleBackdropClick} // Ajout de l'écouteur ici
     >
       <div
-        className="bg-white rounded-lg shadow-lg overflow-hidden w-full max-w-lg"
+        className="bg-white rounded-lg shadow-lg overflow-hidden w-full max-w-2xl"
         onClick={handleContentClick} // Empêche la fermeture lorsque le contenu est cliqué
       >
         <div className="flex justify-between items-center border-b px-6 py-4">
-          <h3 className="text-lg font-semibold">{title}</h3>
+          <div />
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
