@@ -61,7 +61,7 @@ const CityMap: React.FC<CityMapProps> = ({ onCityClick, selectedCity }) => {
   useEffect(() => {
     if (!mapRef.current && mapElement.current) {
       const vectorSource = new VectorSource({
-        url: "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson",
+        url: "/data/countries.geojson",
         format: new GeoJSON(),
       });
 
